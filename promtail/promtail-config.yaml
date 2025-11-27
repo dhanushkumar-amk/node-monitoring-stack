@@ -1,26 +1,39 @@
 server:
-  http_listen_port: 9080
+  http_listen_port: 9080  # For health checks
   grpc_listen_port: 0
 
 positions:
   filename: /tmp/positions.yaml
 
 clients:
-  - url: http://loki-o8cj.onrender.com/loki/api/v1/push  # ← Your actual Loki URL (HTTP for internal comms)
+  - url: http://loki-o8cj.onrender.com/loki/api/v1/push  # Your exact Loki URL
 
 scrape_configs:
-  - job_name: render-logs
+  # Syslog listener for Render streams (RFC5424 format)
+  - job_name: syslog-render
+    syslog:
+      listen_address: 0.0.0.0:1514  # Render sends to HOST:1514 (UDP/TCP)
+      idle_timeout: 60s
+      label_structured_data: true
+      labels:
+        job: "node-app"
+        source: "render"
+      relabel_configs:
+        - source_labels: [__syslog_message_hostname]
+          target_label: "host"
+        - source_labels: [__syslog_message_pid]
+          target_label: "pid"
     pipeline_stages:
-      - json:
-          expressions:
-            level: level
-            message: message
+      - regex:
+          expression: '^(?P<level>\w+).*?(?P<message>.*)$'  # Parse Render logs (level + message)
       - labels:
           level:
+          message:
+
+  # Fallback for direct file scraping (if needed)
+  - job_name: local-logs
     static_configs:
-      - targets:
-          - localhost
+      - targets: [localhost]
         labels:
           job: node-app
-          app: node-app
-          __path__: /var/log/*log  # Scrapes stdout/stderr in Docker (Render logs)
+          __path__: /var/log/*log
