@@ -1,34 +1,37 @@
 const express = require('express');
+const client = require('prom-client');
 const promBundle = require('express-prom-bundle');
-const winston = require('winston');
-const app = express();
-const port = process.env.PORT || 3000;
 
-// Winston logger (outputs JSON for easy Loki parsing)
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.Console()  // Outputs to stdout for Promtail to scrape
-  ]
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Collect default Node.js metrics (memory, CPU, event loop, GC, etc.)
+client.collectDefaultMetrics({ timeout: 5000 });
+
+// Prometheus middleware – this automatically creates /metrics endpoint
+const metricsMiddleware = promBundle({
+  includeMethod: true,
+  includePath: true,
+  includeStatusCode: true,
+  includeUp: true,
+  metricsPath: '/metrics',
+  promClient: {
+    collectDefaultMetrics: {}
+  }
 });
 
-const metricsMiddleware = promBundle({ includeMethod: true, includePath: true, normalizePath: true });
 app.use(metricsMiddleware);
 
+// Your actual route
 app.get('/', (req, res) => {
-  logger.info('Request received at /', { method: req.method, path: req.path, ip: req.ip });
-  res.send('Hello World from Node.js on Render!');
+  console.log('Request received at /');
+  res.send('Hello from Node.js – Monitoring Works!');
 });
 
-app.get('/metrics', async (req, res) => {
-  res.set('Content-Type', 'text/plain');
-  res.send(await require('prom-client').register.metrics());
-});
+// Health check (optional)
+app.get('/health', (req, res) => res.send('OK'));
 
-app.listen(port, () => {
-  logger.info(`Server running on port ${port}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Metrics available at http://localhost:${PORT}/metrics`);
 });
