@@ -1,0 +1,13 @@
+{
+  "name": "render-syslog-to-loki",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "dgram": "^1.0.0",
+    "tls": "^0.0.1-security",
+    "prom-client": "^5.0.0"
+  }
+}
