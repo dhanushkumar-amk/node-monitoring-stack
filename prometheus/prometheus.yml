@@ -6,8 +6,8 @@ scrape_configs:
   - job_name: 'node-app'
     static_configs:
       - targets:
-        - node-monitoring-stack.onrender.com   # ← ONLY the hostname, no https://
+        - node-monitoring-stack.onrender.com
     metrics_path: /metrics
-    scheme: https                               # ← tell Prometheus to use HTTPS
+    scheme: https
     tls_config:
-      insecure_skip_verify: true                # ← Render uses Let's Encrypt (safe to skip verify on free tier)
+      insecure_skip_verify: true               
