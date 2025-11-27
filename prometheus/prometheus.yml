@@ -6,7 +6,7 @@ scrape_configs:
   - job_name: 'node-app'
     # Render internal networking: service-name.onrender.com
     static_configs:
-      - targets: ['https://node-monitoring-stack.onrender.com/']  
+      - targets: ['https://node-monitoring-stack.onrender.com']
     metrics_path: /metrics
     scheme: https                                 # Render uses HTTPS externally
     tls_config:
